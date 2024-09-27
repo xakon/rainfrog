@@ -1,4 +1,11 @@
 SHELL := /bin/bash
+INSTALL ?= install
+
+PREFIX  ?= /usr/local
+BINDIR  ?= ${PREFIX}/bin
+
+TARGET  ?= rainfrog
+
 pg_port ?= 5499
 mysql_port ?= 3317
 postgres_url ?= postgres://root:password@localhost:$(pg_port)/rainfrog?sslmode=disable
@@ -9,6 +16,8 @@ version ?= ""
 .DEFAULT_GOAL := restart
 
 .PHONY: dev profile restart release
+.PHONY: build-release install dist
+
 dev:
 	cargo run -- -u $(url)
 
@@ -51,3 +60,13 @@ release:
 	git pull
 	git tag "v$(version)" main
 	git push origin "v$(version)"
+
+build-release:
+	cargo build --release --locked
+
+install: build-release
+	$(INSTALL)    -d ${DESTDIR}/${BINDIR}
+	$(INSTALL) -s -t ${DESTDIR}/${BINDIR} target/release/${TARGET}
+
+dist: install
+	tar zcf /tmp/${TARGET}.tar.gz ${DESTDIR}/
